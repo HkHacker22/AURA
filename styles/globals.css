@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 12px;
+    --border: 222 22% 12% 0.2;
+    --input: 214 32% 17% 0.2;
+    --ring: 262 83% 90%;
+    --background: 222 22% 7%;
+    --foreground: 0 0% 93%;
+    --card: 224 22% 12%;
+    --card-foreground: 0 0% 93%;
+    --popover: 224 22% 12%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 262 83% 64%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 217 91% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 215 20% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image: radial-gradient(circle at top right, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+    min-height: 100vh;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .floating {
+    transform: translateY(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .floating:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
