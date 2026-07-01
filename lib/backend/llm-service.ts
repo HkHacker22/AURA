@@ -2,6 +2,7 @@ import { GoogleAuth } from 'google-auth-library';
 import type { GenerationRequest, StreamChunk, ObservabilityLog } from './types';
 import { logLLMCall } from './observability';
 import { createHash } from 'crypto';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'aura-501017';
 const LOCATION = 'global';
@@ -49,6 +50,27 @@ async function getAccessToken(): Promise<string> {
   return token.token;
 }
 
+function extractJSON(text: string): string {
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) return codeBlockMatch[1].trim();
+  const braceStart = text.indexOf('{');
+  const braceEnd = text.lastIndexOf('}');
+  if (braceStart !== -1 && braceEnd > braceStart) {
+    return text.slice(braceStart, braceEnd + 1);
+  }
+  return text.trim();
+}
+
+function repairJSON(text: string): string {
+  let cleaned = text.replace(/\\?(?:\r\n|\n|\r)/g, '\\n');
+  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+  const quoteMatch = cleaned.match(/(?<!"):\s*"([^"]*)$/);
+  if (quoteMatch && !cleaned.endsWith('"')) {
+    cleaned += '"';
+  }
+  return cleaned;
+}
+
 function buildRequestBody(req: GenerationRequest): Record<string, unknown> {
   const parts: Array<Record<string, unknown>> = [];
 
@@ -63,7 +85,8 @@ function buildRequestBody(req: GenerationRequest): Record<string, unknown> {
   }
 
   if (req.schema) {
-    parts.push({ text: `\n\nRespond with valid JSON matching this schema:\n${JSON.stringify(req.schema, null, 2)}` });
+    const jsonSchema = zodToJsonSchema(req.schema);
+    parts.push({ text: `\n\nRespond with valid JSON matching this schema:\n${JSON.stringify(jsonSchema, null, 2)}` });
   }
 
   parts.push({ text: req.userMessage });
@@ -114,15 +137,43 @@ export class LLMService {
     }
 
     const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    let text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     const usageMetadata = data?.usageMetadata ?? {};
     const latencyMs = Date.now() - start;
 
-    let parsed: T;
-    try {
-      parsed = JSON.parse(text) as T;
-    } catch {
-      parsed = text as unknown as T;
+    let parsed: T = undefined as unknown as T;
+    let parseSuccess = false;
+
+    const strategies = [
+      () => { const r = JSON.parse(text); if (req.schema) return req.schema.parse(r); return r; },
+      () => { const r = JSON.parse(extractJSON(text)); if (req.schema) return req.schema.parse(r); return r; },
+      () => { const r = JSON.parse(repairJSON(text)); if (req.schema) return req.schema.parse(r); return r; },
+      () => { const r = JSON.parse(repairJSON(extractJSON(text))); if (req.schema) return req.schema.parse(r); return r; },
+    ];
+
+    for (const tryParse of strategies) {
+      try {
+        parsed = tryParse() as T;
+        parseSuccess = true;
+        break;
+      } catch {
+        continue;
+      }
+    }
+
+    if (!parseSuccess) {
+      logLLMCall({
+        userId: meta?.userId,
+        agentId: meta?.agentId ?? 'unknown',
+        promptHash,
+        promptTokens: usageMetadata.promptTokenCount ?? 0,
+        completionTokens: usageMetadata.candidatesTokenCount ?? 0,
+        latencyMs,
+        model: MODEL,
+        success: false,
+        error: `Parse failed after all strategies. Raw: ${text.slice(0, 500)}`,
+      });
+      return retryWithFixPrompt(req, text, meta);
     }
 
     logLLMCall({
@@ -138,6 +189,17 @@ export class LLMService {
 
     setCache(promptHash, parsed);
     return parsed;
+  }
+
+  private async retryWithFixPrompt<T>(originalReq: GenerationRequest, badText: string, meta?: { userId?: string; agentId?: string }): Promise<T> {
+    const fixReq: GenerationRequest = {
+      systemPrompt: originalReq.systemPrompt,
+      userMessage: `Your previous response had invalid JSON. Here is what you output:\n\n${badText.slice(0, 2000)}\n\nFix it: output ONLY valid JSON matching the schema. No markdown, no code fences, no extra text. Escape all newlines and special characters.`,
+      examples: originalReq.examples,
+      schema: originalReq.schema,
+      temperature: 0.2,
+    };
+    return this.generate<T>(fixReq, meta);
   }
 
   async *stream(req: GenerationRequest, meta?: { userId?: string; agentId?: string }): AsyncGenerator<StreamChunk> {

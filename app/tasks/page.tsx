@@ -2,26 +2,14 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import toast from 'react-hot-toast';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
-import { TaskCard } from '@/components/ui/task-card';
-import { tasks as allTasks } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
 const filters = ['All', 'Pending', 'In Progress', 'Completed'] as const;
 
 export default function Tasks() {
   const [activeFilter, setActiveFilter] = useState('All');
-
-  const filteredTasks = activeFilter === 'All'
-    ? allTasks
-    : allTasks.filter(t => {
-        if (activeFilter === 'Pending') return t.status === 'pending' || t.status === 'deferred';
-        if (activeFilter === 'In Progress') return t.status === 'in_progress';
-        if (activeFilter === 'Completed') return t.status === 'completed';
-        return true;
-      });
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,25 +38,10 @@ export default function Tasks() {
 
         <div className="flex-1 overflow-y-auto px-4 pb-28 scrollbar-hide">
           <div className="space-y-3 pt-2">
-            {filteredTasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-center">
-                <p className="text-muted-foreground">No tasks found</p>
-              </div>
-            ) : (
-              filteredTasks.map((task, i) => (
-                <motion.div
-                  key={task.taskId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + i * 0.05 }}
-                >
-                  <TaskCard
-                    task={task}
-                    onStatusChange={() => toast.success('Coming soon — real sync with Firestore')}
-                  />
-                </motion.div>
-              ))
-            )}
+            <div className="flex flex-col items-center justify-center h-40 text-center">
+              <p className="text-muted-foreground">No tasks yet</p>
+              <p className="text-sm text-muted-foreground/60 mt-1">Use brain-dump to create your first tasks</p>
+            </div>
           </div>
         </div>
       </div>

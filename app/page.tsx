@@ -4,12 +4,10 @@ import { motion } from 'framer-motion';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { GlassCard } from '@/components/ui/glass-card';
 import { AgentCard } from '@/components/ui/agent-card';
-import { ProbabilityBar } from '@/components/ui/probability-bar';
 import { FloatingMicButton } from '@/components/ui/floating-mic-button';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { BackgroundLines } from '@/components/ui/background-lines';
-import { formatDate, formatDuration } from '@/lib/utils';
-import { agents, schedule, weeklyReport } from '@/lib/mock-data';
+import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -56,14 +54,18 @@ export default function Dashboard() {
           >
             <h2 className="text-lg font-semibold mb-3 px-2">Your Agents</h2>
             <div className="space-y-3">
-              {agents.map((agent, i) => (
+              {['planner', 'research', 'reflection', 'focus'].map((name, i) => (
                 <motion.div
-                  key={agent.name}
+                  key={name}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <AgentCard agent={agent} />
+                  <AgentCard agent={{
+                    name,
+                    status: 'idle' as const,
+                    color: 'bg-secondary',
+                  }} />
                 </motion.div>
               ))}
             </div>
@@ -79,28 +81,8 @@ export default function Dashboard() {
                 See All
               </Link>
             </div>
-            <div className="space-y-3">
-              {schedule.slots.slice(0, 3).map((slot, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="glass rounded-lg p-4 flex items-center gap-4"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <span className="text-primary font-semibold text-sm">
-                      {slot.start.getHours()}:{slot.start.getMinutes().toString().padStart(2, '0')}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{slot.title}</p>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {slot.type} &bull; {formatDuration((slot.end.getTime() - slot.start.getTime()) / 60000)}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+            <div className="glass rounded-lg p-6 text-center text-muted-foreground">
+              <p>No items scheduled yet. Use brain-dump or planner to create your day.</p>
             </div>
           </motion.section>
 
@@ -113,15 +95,15 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Tasks Completed</span>
-                  <span className="font-semibold">{weeklyReport.completedTasks}</span>
+                  <span className="font-semibold">—</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Focus Minutes</span>
-                  <span className="font-semibold">{weeklyReport.totalFocusMinutes}</span>
+                  <span className="font-semibold">—</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Productivity Score</span>
-                  <span className="font-semibold text-primary">{weeklyReport.productivityScore}</span>
+                  <span className="font-semibold text-primary">—</span>
                 </div>
               </div>
             </GlassCard>
