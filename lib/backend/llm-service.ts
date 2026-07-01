@@ -85,7 +85,7 @@ function buildRequestBody(req: GenerationRequest): Record<string, unknown> {
   }
 
   if (req.schema) {
-    const jsonSchema = zodToJsonSchema(req.schema);
+    const jsonSchema = zodToJsonSchema(req.schema as any);
     parts.push({ text: `\n\nRespond with valid JSON matching this schema:\n${JSON.stringify(jsonSchema, null, 2)}` });
   }
 
@@ -173,7 +173,7 @@ export class LLMService {
         success: false,
         error: `Parse failed after all strategies. Raw: ${text.slice(0, 500)}`,
       });
-      return retryWithFixPrompt(req, text, meta);
+      return this.retryWithFixPrompt(req, text, meta);
     }
 
     logLLMCall({

@@ -42,33 +42,33 @@
   }
 
   .dark {
-    --background: 222 22% 7%;
-    --foreground: 0 0% 93%;
-    --card: 224 22% 12%;
-    --card-foreground: 0 0% 93%;
-    --popover: 224 22% 12%;
-    --popover-foreground: 0 0% 93%;
-    --primary: 262 83% 64%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 217 91% 60%;
+    --background: 240 33% 5%;
+    --foreground: 270 20% 98%;
+    --card: 224 39% 11%;
+    --card-foreground: 270 20% 98%;
+    --popover: 224 39% 11%;
+    --popover-foreground: 270 20% 98%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 239 84% 67%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 215 20% 12%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 91% 60%;
+    --muted: 215 16% 65%;
+    --muted-foreground: 215 16% 65%;
+    --accent: 188 95% 43%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 350 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 22% 12% 0.2;
-    --input: 214 32% 17% 0.2;
+    --border: 224 39% 11% 0.3;
+    --input: 224 39% 11% 0.3;
     --ring: 262 83% 90%;
-    --radius: 12px;
+    --radius: 20px;
   }
 
   body {
     @apply antialiased;
-    background: hsl(222, 22%, 7%);
-    color: hsl(0, 0%, 93%);
-    background-image: radial-gradient(circle at top right, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+    background: #0A0A0F;
+    color: #FBFAFC;
+    background-image: radial-gradient(circle at top right, rgba(124, 58, 237, 0.08) 0%, transparent 50%), radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
     min-height: 100vh;
   }
 
@@ -77,18 +77,19 @@
   }
 
   .glass {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    background: rgba(17, 24, 39, 0.4);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 
   .glass-dark {
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(10, 10, 15, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   }
 
   .floating {
@@ -109,5 +110,26 @@
     &::-webkit-scrollbar {
       display: none;
     }
+  }
+
+  @keyframes spin-reverse {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+
+  .animate-spin-reverse {
+    animation: spin-reverse 8s linear infinite;
+  }
+
+  .animate-orbit-slow {
+    animation: spin 20s linear infinite;
+  }
+
+  .animate-orbit-fast {
+    animation: spin-reverse 10s linear infinite;
   }
 }

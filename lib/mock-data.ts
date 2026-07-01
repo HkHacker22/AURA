@@ -7,6 +7,7 @@ export const agents: Agent[] = [
     currentAction: 'Optimizing daily schedule',
     progress: 75,
     color: 'bg-primary',
+    icon: 'calendar',
   },
   {
     name: 'deadline',
@@ -14,21 +15,25 @@ export const agents: Agent[] = [
     currentAction: 'Scoring task probability',
     progress: 45,
     color: 'bg-danger',
+    icon: 'clock',
   },
   {
     name: 'research',
     status: 'idle',
     color: 'bg-secondary',
+    icon: 'search',
   },
   {
     name: 'reflection',
     status: 'idle',
     color: 'bg-success',
+    icon: 'activity',
   },
   {
     name: 'focus',
     status: 'idle',
     color: 'bg-purple-400',
+    icon: 'target',
   },
 ];
 

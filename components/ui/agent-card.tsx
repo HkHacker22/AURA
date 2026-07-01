@@ -2,57 +2,74 @@
 
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface AgentCardProps {
   agent: {
     name: string;
-    status: string;
-    currentAction?: string;
-    progress?: number;
-    color: string;
+    status: string; // 'online' | 'thinking' | 'idle'
+    color?: string; // custom gradient classes
+    avatarLetter?: string;
   };
   isActive?: boolean;
 }
 
 export function AgentCard({ agent, isActive = false }: AgentCardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'working': return 'bg-primary';
-      case 'idle': return 'bg-success';
-      default: return 'bg-muted';
+  // Map agent names to specific visual properties
+  const getAgentTheme = (name: string) => {
+    switch (name.toLowerCase()) {
+      case 'planner':
+        return {
+          bg: 'bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/20',
+          text: 'text-purple-400',
+          letter: 'P',
+        };
+      case 'research':
+        return {
+          bg: 'bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 border-cyan-500/20',
+          text: 'text-cyan-400',
+          letter: 'R',
+        };
+      case 'reflection':
+        return {
+          bg: 'bg-gradient-to-br from-indigo-600/20 to-indigo-800/20 border-indigo-500/20',
+          text: 'text-indigo-400',
+          letter: 'R',
+        };
+      case 'focus':
+      default:
+        return {
+          bg: 'bg-gradient-to-br from-pink-600/20 to-pink-800/20 border-pink-500/20',
+          text: 'text-pink-400',
+          letter: 'F',
+        };
     }
   };
 
+  const theme = getAgentTheme(agent.name);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ y: -2, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       className={cn(
-        'glass rounded-xl p-4 flex items-center gap-4',
-        isActive && 'ring-2 ring-primary/50'
+        'rounded-2xl p-4.5 backdrop-blur-xl bg-white/[0.03] border border-white/5 flex items-center gap-4 transition-all duration-300',
+        isActive ? 'ring-2 ring-purple-500/50 bg-white/[0.06] border-white/10' : 'hover:bg-white/[0.05] hover:border-white/10'
       )}
     >
-      <div className="relative">
-        <div className={cn('w-12 h-12 rounded-full flex items-center justify-center', agent.color)}>
-          <div className="text-white font-bold">
-            {agent.name.charAt(0).toUpperCase()}
-          </div>
+      <div className="relative shrink-0">
+        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border border-white/10 shadow-lg', theme.bg, theme.text)}>
+          {theme.letter}
         </div>
-        <div className={cn('absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background', getStatusColor(agent.status))} />
       </div>
       
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold capitalize truncate">{agent.name} Agent</h3>
-        {agent.currentAction && (
-          <p className="text-sm text-muted-foreground truncate">{agent.currentAction}</p>
-        )}
+        <h4 className="text-sm font-semibold capitalize text-white">{agent.name}</h4>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
+          <span className="text-[11px] text-muted-foreground font-medium">Online</span>
+        </div>
       </div>
-      
-      {agent.progress !== undefined && (
-        <div className="text-sm font-medium">{Math.round(agent.progress)}%</div>
-      )}
     </motion.div>
   );
 }

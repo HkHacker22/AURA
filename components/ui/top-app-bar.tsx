@@ -11,44 +11,38 @@ interface TopAppBarProps {
   showNotifications?: boolean;
 }
 
-export function TopAppBar({ title, subtitle, showNotifications = true }: TopAppBarProps) {
+export function TopAppBar({ title, showNotifications = true }: TopAppBarProps) {
   const router = useRouter();
-  const notificationCount = 3;
 
   return (
     <motion.header
-      initial={{ opacity: 0, y: -20 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center justify-between px-4 py-3 glass-dark sticky top-0 z-40"
+      className="flex items-center justify-between px-6 py-4 bg-transparent sticky top-0 z-40 backdrop-blur-md border-b border-white/[0.04]"
     >
-      <div>
-        <h1 className="text-xl font-semibold">{title}</h1>
-        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold tracking-wider text-white bg-clip-text">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         <button
           onClick={() => router.push('/tasks')}
-          className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/[0.06] active:scale-95 transition-all"
         >
-          <Search className="w-5 h-5 text-muted-foreground" />
+          <Search className="w-[18px] h-[18px] text-muted-foreground hover:text-white" strokeWidth={2} />
         </button>
         
         {showNotifications && (
           <button
             onClick={() => router.push('/notifications')}
-            className="relative w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+            className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/[0.06] active:scale-95 transition-all"
           >
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            {notificationCount > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full text-xs flex items-center justify-center text-white font-medium"
-              >
-                {notificationCount}
-              </motion.span>
-            )}
+            <Bell className="w-[18px] h-[18px] text-muted-foreground hover:text-white" strokeWidth={2} />
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute top-2 right-2 w-2 h-2 bg-pink-500 rounded-full shadow-[0_0_8px_#EC4899]"
+            />
           </button>
         )}
       </div>

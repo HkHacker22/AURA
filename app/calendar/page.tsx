@@ -73,6 +73,9 @@ export default function Calendar() {
               
               if (dayNum < 1) return <div key={i} />;
 
+              const dayIsToday = isToday(dayNum);
+              const dayHasEvents = hasEvents(dayNum);
+
               return (
                 <motion.div
                   key={i}
@@ -81,12 +84,12 @@ export default function Calendar() {
                   whileHover={{ scale: 1.05 }}
                   className={cn(
                     'aspect-square rounded-lg flex items-center justify-center relative cursor-pointer',
-                    isToday ? 'bg-primary text-white' : 'bg-white/5 hover:bg-white/10',
+                    dayIsToday ? 'bg-primary text-white' : 'bg-white/5 hover:bg-white/10',
                     'transition-all duration-200'
                   )}
                 >
-                  <span className={cn('text-sm', isToday && 'font-bold')}>{dayNum}</span>
-                  {hasEvents && !isToday && (
+                  <span className={cn('text-sm', dayIsToday && 'font-bold')}>{dayNum}</span>
+                  {dayHasEvents && !dayIsToday && (
                     <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-0.5">
                       <div className="w-1 h-1 bg-primary rounded-full" />
                       <div className="w-1 h-1 bg-secondary rounded-full" />
