@@ -4,7 +4,7 @@ export type TaskType = 'coding' | 'writing' | 'meeting' | 'creative' | 'admin' |
 export type EnergyLevel = 'high' | 'medium' | 'low';
 export type LocationContext = 'home' | 'office' | 'gym' | 'any';
 export type AgentName = 'planner' | 'deadline' | 'research' | 'reflection' | 'focus';
-export type AgentStatus = 'idle' | 'working' | 'idle' | 'error';
+export type AgentStatus = 'idle' | 'working' | 'error';
 export type FocusPhase = 'work' | 'break' | 'longBreak';
 
 export interface Task {

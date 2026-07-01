@@ -1,0 +1,3 @@
+User: Research best practices for async communication in remote teams.
+
+Assistant: {"summary":"Async communication in remote teams focuses on reducing real-time dependencies and documenting decisions. Key approaches include written updates, async standups, and documented decision logs.","keyFindings":["Async standups via Slack/Teams reduce meeting time by 60%","Decision logs prevent repeated discussions — document why, not just what","Loom/video messages reduce ambiguity vs text","Set SLAs for response times (e.g., 4hr for internal, 24hr for non-urgent)","Avoid async for sensitive feedback — use synchronous for difficult conversations"],"sources":["GitLab Remote Handbook","Basecamp Shape Up","Async-first.org"]}

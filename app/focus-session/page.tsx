@@ -8,52 +8,80 @@ import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { Pause, Play, SkipForward, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const PHASE_CONFIG = {
+  work: { minutes: 25 },
+  break: { minutes: 5 },
+  longBreak: { minutes: 15 },
+};
+
+let sessionsSinceLongBreak = 0;
+
 export default function FocusSession() {
   const [isActive, setIsActive] = useState(false);
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   const [phase, setPhase] = useState<'work' | 'break' | 'longBreak'>('work');
-  const minutesRef = useRef(minutes);
   const secondsRef = useRef(seconds);
 
   useEffect(() => {
-    minutesRef.current = minutes;
     secondsRef.current = seconds;
-  }, [minutes, seconds]);
+  });
+
+  const advancePhase = useCallback(() => {
+    if (phase === 'work') {
+      sessionsSinceLongBreak++;
+      if (sessionsSinceLongBreak % 4 === 0) {
+        setPhase('longBreak');
+        setMinutes(PHASE_CONFIG.longBreak.minutes);
+      } else {
+        setPhase('break');
+        setMinutes(PHASE_CONFIG.break.minutes);
+      }
+    } else {
+      setPhase('work');
+      setMinutes(PHASE_CONFIG.work.minutes);
+    }
+    setSeconds(0);
+  }, [phase]);
 
   useEffect(() => {
     if (!isActive) return;
     const interval = setInterval(() => {
       if (secondsRef.current > 0) {
         setSeconds(s => { secondsRef.current = s - 1; return s - 1; });
-      } else if (minutesRef.current > 0) {
-        setMinutes(m => { minutesRef.current = m - 1; return m - 1; });
+      } else if (minutes > 0) {
+        setMinutes(m => m - 1);
         setSeconds(59);
         secondsRef.current = 59;
       } else {
         setIsActive(false);
-        clearInterval(interval);
+        advancePhase();
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [isActive]);
+  }, [isActive, minutes, advancePhase]);
 
   const totalSeconds = minutes * 60 + seconds;
-  const initialSeconds = 25 * 60;
+  const initialSeconds = PHASE_CONFIG[phase].minutes * 60;
   const progress = ((initialSeconds - totalSeconds) / initialSeconds) * 100;
 
+  const skipPhase = useCallback(() => {
+    setIsActive(false);
+    advancePhase();
+  }, [advancePhase]);
+
   const resetTimer = useCallback(() => {
-    setMinutes(25);
+    setMinutes(PHASE_CONFIG[phase].minutes);
     setSeconds(0);
     setIsActive(false);
-  }, []);
+  }, [phase]);
 
   const toggleTimer = useCallback(() => {
     if (minutes === 0 && seconds === 0) {
-      setMinutes(25);
+      setMinutes(PHASE_CONFIG[phase].minutes);
     }
     setIsActive(prev => !prev);
-  }, [minutes, seconds]);
+  }, [minutes, seconds, phase]);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -126,7 +154,7 @@ export default function FocusSession() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => { resetTimer(); }}
+            onClick={skipPhase}
             className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center"
           >
             <SkipForward className="w-5 h-5 text-muted-foreground" />
@@ -135,7 +163,7 @@ export default function FocusSession() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => { resetTimer(); setPhase('work'); }}
+            onClick={resetTimer}
             className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center"
           >
             <RotateCcw className="w-5 h-5 text-muted-foreground" />

@@ -18,6 +18,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   const handleTranscribe = (text: string) => {
+    localStorage.setItem('aura_pending_transcript', text);
     router.push('/brain-dump');
   };
 

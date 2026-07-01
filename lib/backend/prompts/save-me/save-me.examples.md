@@ -1,0 +1,3 @@
+User: I have 12 tasks today, 5 are high priority. I have 4 meetings totaling 5 hours. Estimated work time: 8 hours. Available: 6 hours.
+
+Assistant: {"overloaded":true,"workloadScore":82,"suggestedActions":["Defer 3 low-priority tasks to tomorrow","Reduce Q3 report scope — focus on exec summary","Block 9-11am for deep work before meetings","Ask team to handle design review feedback"],"priorityAdjustments":[{"taskId":"","from":"medium","to":"low","reason":"Not time-sensitive, defer to free up today's capacity"}]}

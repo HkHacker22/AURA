@@ -2,27 +2,44 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Send, Mic, MicOff, Loader2, CheckCircle, Calendar, FileText } from 'lucide-react';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { GlassCard } from '@/components/ui/glass-card';
 import { GoogleGeminiEffect } from '@/components/ui/google-gemini-effect';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { cn } from '@/lib/utils';
 import { useMotionValue } from 'framer-motion';
+import toast from 'react-hot-toast';
+
+interface ExtractedTask {
+  title: string;
+  priority?: string;
+  tags?: string[];
+}
+
+interface ExtractedEvent {
+  title: string;
+  date?: string;
+  time?: string;
+}
+
+interface ExtractedNote {
+  content: string;
+}
+
+interface BrainDumpResult {
+  tasks: ExtractedTask[];
+  events: ExtractedEvent[];
+  notes: ExtractedNote[];
+}
 
 interface Message {
   id: string;
   content: string;
   type: 'user' | 'ai';
   timestamp: Date;
-  tasksExtracted?: number;
+  result?: BrainDumpResult;
 }
-
-const mockAiResponses = [
-  "I've extracted 2 tasks from your brain dump. I've scheduled the investor meeting for tomorrow at 3pm with preparation time at 2:30pm. The Q3 budget spreadsheet is estimated for 2 hours.",
-  'Got it! I understand you need to work on the presentation deck. Your peak energy window tomorrow morning from 9-11am is perfect for this focused work.',
-  'I see you mentioned feeling overwhelmed. Let me prepare a survival plan for you. Starting schedule compression...',
-];
 
 export default function BrainDump() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,6 +47,7 @@ export default function BrainDump() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasProcessedTranscript = useRef(false);
   const pathLengths = [
     useMotionValue(0),
     useMotionValue(0),
@@ -42,34 +60,54 @@ export default function BrainDump() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const addMessage = (content: string, type: 'user' | 'ai', tasksExtracted?: number) => {
+  useEffect(() => {
+    if (hasProcessedTranscript.current) return;
+    const pending = localStorage.getItem('aura_pending_transcript');
+    if (pending) {
+      hasProcessedTranscript.current = true;
+      localStorage.removeItem('aura_pending_transcript');
+      addMessage(pending, 'user');
+      processWithAI(pending);
+    }
+  }, []);
+
+  const addMessage = (content: string, type: 'user' | 'ai', result?: BrainDumpResult) => {
     const msg: Message = {
       id: Date.now().toString(),
       content,
       type,
       timestamp: new Date(),
-      tasksExtracted,
+      result,
     };
     setMessages(prev => [...prev, msg]);
   };
 
-  const simulateAiResponse = () => {
+  const processWithAI = async (text: string) => {
     setIsProcessing(true);
-    setTimeout(() => {
-      addMessage(
-        mockAiResponses[Math.floor(Math.random() * mockAiResponses.length)],
-        'ai',
-        Math.floor(Math.random() * 3) + 1
-      );
+    try {
+      const res = await fetch('/api/ai/brain-dump', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userMessage: text }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const result: BrainDumpResult = await res.json();
+      const count = (result.tasks?.length ?? 0) + (result.events?.length ?? 0) + (result.notes?.length ?? 0);
+      addMessage(`Processed your brain dump — found ${count} items.`, 'ai', result);
+    } catch {
+      addMessage("Sorry, I couldn't process that right now. Please try again.", 'ai');
+      toast.error('Brain dump processing failed');
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   const handleSend = () => {
     if (!input.trim()) return;
-    addMessage(input, 'user');
+    const text = input;
     setInput('');
-    simulateAiResponse();
+    addMessage(text, 'user');
+    processWithAI(text);
   };
 
   const handleVoiceInput = () => {
@@ -84,17 +122,16 @@ export default function BrainDump() {
         const transcript = event.results[0][0].transcript;
         setIsListening(false);
         addMessage(transcript, 'user');
-        simulateAiResponse();
+        processWithAI(transcript);
       };
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
+      recognition.onerror = () => { setIsListening(false); };
       recognition.start();
     } else {
       setTimeout(() => {
         setIsListening(false);
-        addMessage("I need to prepare for tomorrow's investor meeting and finish the Q3 budget spreadsheet", 'user');
-        simulateAiResponse();
+        const mock = "I need to prepare for tomorrow's investor meeting and finish the Q3 budget spreadsheet";
+        addMessage(mock, 'user');
+        processWithAI(mock);
       }, 2000);
     }
   };
@@ -133,7 +170,7 @@ export default function BrainDump() {
                 key="messages"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="space-y-4"
+                className="space-y-4 pb-28"
               >
                 {messages.map((message) => (
                   <motion.div
@@ -141,21 +178,71 @@ export default function BrainDump() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className={cn(
-                      'flex',
-                      message.type === 'user' ? 'justify-end' : 'justify-start'
-                    )}
+                    className={cn('flex', message.type === 'user' ? 'justify-end' : 'justify-start')}
                   >
-                    <GlassCard className={cn(
-                      'max-w-[80%]',
-                      message.type === 'user' ? 'bg-primary/20' : ''
-                    )}>
+                    <GlassCard className={cn('max-w-[80%]', message.type === 'user' ? 'bg-primary/20' : '')}>
                       <p className="text-sm">{message.content}</p>
-                      {message.tasksExtracted && (
-                        <div className="mt-2 pt-2 border-t border-white/10">
-                          <span className="text-xs font-medium text-primary">
-                            +{message.tasksExtracted} tasks extracted
-                          </span>
+                      {message.result && (
+                        <div className="mt-3 pt-3 border-t border-white/10 space-y-3">
+                          {message.result.tasks?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 text-xs font-medium text-primary mb-2">
+                                <CheckCircle className="w-3 h-3" />
+                                Tasks ({message.result.tasks.length})
+                              </div>
+                              <div className="space-y-1">
+                                {message.result.tasks.map((t, i) => (
+                                  <div key={i} className="flex items-center gap-2 text-xs">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                    <span className="truncate">{t.title}</span>
+                                    {t.priority && (
+                                      <span className={cn(
+                                        'text-[10px] px-1.5 py-0.5 rounded-full shrink-0',
+                                        t.priority === 'high' ? 'bg-danger/20 text-danger' :
+                                        t.priority === 'medium' ? 'bg-warning/20 text-warning' :
+                                        'bg-white/10 text-muted-foreground'
+                                      )}>
+                                        {t.priority}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {message.result.events?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 text-xs font-medium text-secondary mb-2">
+                                <Calendar className="w-3 h-3" />
+                                Events ({message.result.events.length})
+                              </div>
+                              <div className="space-y-1">
+                                {message.result.events.map((e, i) => (
+                                  <div key={i} className="text-xs">
+                                    <span className="text-muted-foreground">{e.title}</span>
+                                    {(e.date || e.time) && (
+                                      <span className="text-muted-foreground ml-1">
+                                        — {e.date}{e.time ? ` at ${e.time}` : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {message.result.notes?.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+                                <FileText className="w-3 h-3" />
+                                Notes ({message.result.notes.length})
+                              </div>
+                              <div className="space-y-1">
+                                {message.result.notes.map((n, i) => (
+                                  <p key={i} className="text-xs text-muted-foreground">• {n.content}</p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </GlassCard>

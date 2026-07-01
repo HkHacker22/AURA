@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "time": { "type": "string", "description": "HH:MM format" },
+          "title": { "type": "string" },
+          "duration": { "type": "number", "description": "Minutes" },
+          "type": { "type": "string", "enum": ["focus", "meeting", "break", "admin", "learning"] }
+        },
+        "required": ["time", "title", "duration", "type"]
+      }
+    },
+    "reasoning": { "type": "string" }
+  },
+  "required": ["plan"]
+}

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Bell, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface TopAppBarProps {
   title: string;
@@ -11,6 +12,7 @@ interface TopAppBarProps {
 }
 
 export function TopAppBar({ title, subtitle, showNotifications = true }: TopAppBarProps) {
+  const router = useRouter();
   const notificationCount = 3;
 
   return (
@@ -25,12 +27,18 @@ export function TopAppBar({ title, subtitle, showNotifications = true }: TopAppB
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+        <button
+          onClick={() => router.push('/tasks')}
+          className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+        >
           <Search className="w-5 h-5 text-muted-foreground" />
         </button>
         
         {showNotifications && (
-          <button className="relative w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+          <button
+            onClick={() => router.push('/notifications')}
+            className="relative w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+          >
             <Bell className="w-5 h-5 text-muted-foreground" />
             {notificationCount > 0 && (
               <motion.span

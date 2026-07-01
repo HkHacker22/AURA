@@ -1,0 +1,3 @@
+User: Plan my day. I have Q3 budget review (high, 2h), team standup (30min), design review (medium, 1h), and need to prepare for investor meeting (high, 1h).
+
+Assistant: {"plan":[{"time":"09:00","title":"Q3 Budget Review","duration":120,"type":"focus"},{"time":"11:00","title":"Prepare Investor Meeting","duration":60,"type":"focus"},{"time":"12:00","title":"Lunch Break","duration":60,"type":"break"},{"time":"13:00","title":"Team Standup","duration":30,"type":"meeting"},{"time":"14:00","title":"Design Review","duration":60,"type":"focus"}],"reasoning":"Placed budget review first as highest priority morning task. Batched meetings in afternoon."}

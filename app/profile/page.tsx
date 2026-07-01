@@ -18,10 +18,12 @@ export default function Profile() {
     router.push('/auth');
   };
 
+  const navigate = (href: string) => () => router.push(href);
+
   const menuItems = [
-    { icon: Settings, label: 'Settings', href: '/settings' },
-    { icon: Bell, label: 'Notifications', href: '/notifications' },
-    { icon: Shield, label: 'Privacy & Security', href: '/settings/privacy' },
+    { icon: Settings, label: 'Settings', onClick: navigate('/settings') },
+    { icon: Bell, label: 'Notifications', onClick: navigate('/notifications') },
+    { icon: Shield, label: 'Privacy & Security', onClick: navigate('/settings') },
     { icon: LogOut, label: 'Sign Out', onClick: handleSignOut, danger: true },
   ];
 
@@ -51,7 +53,10 @@ export default function Profile() {
               <p className="font-medium">Free Plan</p>
               <p className="text-sm text-muted-foreground">Upgrade for premium insights</p>
             </div>
-            <button className="px-4 py-2 rounded-full bg-primary text-sm font-medium">
+            <button
+              onClick={() => router.push('/settings')}
+              className="px-4 py-2 rounded-full bg-primary text-sm font-medium"
+            >
               Upgrade
             </button>
           </div>

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "wins": { "type": "array", "items": { "type": "string" } },
+    "challenges": { "type": "array", "items": { "type": "string" } },
+    "patterns": {
+      "type": "object",
+      "properties": {
+        "peakProductivityTime": { "type": "string" },
+        "meetingOverloadDays": { "type": "array", "items": { "type": "string" } },
+        "taskCompletionRate": { "type": "number" }
+      },
+      "required": ["peakProductivityTime", "taskCompletionRate"]
+    },
+    "recommendations": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["wins", "challenges", "patterns", "recommendations"]
+}

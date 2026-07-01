@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { TaskCard } from '@/components/ui/task-card';
@@ -61,7 +62,10 @@ export default function Tasks() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.05 }}
                 >
-                  <TaskCard task={task} />
+                  <TaskCard
+                    task={task}
+                    onStatusChange={() => toast.success('Coming soon — real sync with Firestore')}
+                  />
                 </motion.div>
               ))
             )}

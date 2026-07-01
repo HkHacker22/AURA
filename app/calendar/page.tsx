@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -11,19 +12,50 @@ const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const hours = Array.from({ length: 24 }, (_, i) => i);
 
 export default function Calendar() {
-  const today = new Date().getDay();
+  const now = new Date();
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth());
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+
+  const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const today = now.getDate();
+
+  const prevMonth = () => {
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
+    else { setCurrentMonth(m => m - 1); }
+  };
+
+  const nextMonth = () => {
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
+    else { setCurrentMonth(m => m + 1); }
+  };
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0=Sun
+  const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Mon-start
+  const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+  const isToday = (d: number) =>
+    d === today && currentMonth === now.getMonth() && currentYear === now.getFullYear();
+
+  const hasEvents = (d: number) => [5, 8, 12, 15, 22, 27].includes(d);
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <TopAppBar title="Calendar" subtitle="June 2026" />
+      <TopAppBar title="Calendar" subtitle={monthName} />
 
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between mb-4">
-          <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+          <button
+            onClick={prevMonth}
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+          >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-lg font-semibold">June 2026</h2>
-          <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+          <h2 className="text-lg font-semibold">{monthName}</h2>
+          <button
+            onClick={nextMonth}
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+          >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
@@ -36,10 +68,8 @@ export default function Calendar() {
               </div>
             ))}
             
-            {Array.from({ length: 35 }).map((_, i) => {
-              const dayNum = i - 6;
-              const isToday = dayNum === 27;
-              const hasEvents = [12, 15, 22, 27].includes(dayNum);
+            {Array.from({ length: totalCells }).map((_, i) => {
+              const dayNum = i - startOffset + 1;
               
               if (dayNum < 1) return <div key={i} />;
 

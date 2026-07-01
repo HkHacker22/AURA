@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const tabs = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/brain-dump', label: 'Brain Dump', icon: Brain },
   { href: '/schedule', label: 'Schedule', icon: CalendarIcon },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
@@ -56,12 +56,12 @@ export function BottomTabs() {
           whileHover={{ rotate: 12 }}
           onClick={() => router.push('/save-me')}
           className={cn(
-            'flex flex-col items-center gap-1 px-3 py-2 rounded-full',
+            'flex flex-col items-center gap-1 px-2.5 py-2 rounded-xl',
             'bg-danger text-white shadow-lg shadow-danger/25'
           )}
         >
           <Save className="w-5 h-5" />
-          <span className="text-xs font-medium">Save Me</span>
+          <span className="text-[10px] font-medium leading-tight">Save Me</span>
         </motion.button>
       </div>
     </nav>

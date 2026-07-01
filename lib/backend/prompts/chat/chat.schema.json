@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "message": { "type": "string", "description": "Response text" },
+    "suggestions": { "type": "array", "items": { "type": "string" }, "description": "Optional suggested next actions" }
+  },
+  "required": ["message"]
+}

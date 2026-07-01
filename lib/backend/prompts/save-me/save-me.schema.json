@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "overloaded": { "type": "boolean" },
+    "workloadScore": { "type": "number", "minimum": 0, "maximum": 100 },
+    "suggestedActions": { "type": "array", "items": { "type": "string" } },
+    "priorityAdjustments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "string" },
+          "from": { "type": "string", "enum": ["high", "medium", "low"] },
+          "to": { "type": "string", "enum": ["high", "medium", "low"] },
+          "reason": { "type": "string" }
+        },
+        "required": ["taskId", "from", "to", "reason"]
+      }
+    }
+  },
+  "required": ["overloaded", "workloadScore", "suggestedActions"]
+}

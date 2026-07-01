@@ -1,18 +1,28 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { GlassCard } from '@/components/ui/glass-card';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { Switch } from '@/components/ui/switch';
 
 export default function Settings() {
+  const [toggles, setToggles] = useState({
+    'Dark Mode': true,
+    'Proactive Alerts': true,
+    'Voice Input': true,
+    'Calendar Sync': true,
+    'Weekly Reports': true,
+  });
+
   const settings = [
-    { label: 'Dark Mode', enabled: true },
-    { label: 'Proactive Alerts', enabled: true },
-    { label: 'Voice Input', enabled: true },
-    { label: 'Calendar Sync', enabled: true },
-    { label: 'Weekly Reports', enabled: true },
+    { label: 'Dark Mode', key: 'Dark Mode' as const },
+    { label: 'Proactive Alerts', key: 'Proactive Alerts' as const },
+    { label: 'Voice Input', key: 'Voice Input' as const },
+    { label: 'Calendar Sync', key: 'Calendar Sync' as const },
+    { label: 'Weekly Reports', key: 'Weekly Reports' as const },
   ];
 
   const personality = [
@@ -21,6 +31,11 @@ export default function Settings() {
     { label: 'Humour', value: 30 },
     { label: 'Challenge Level', value: 90 },
   ];
+
+  const handleToggle = (label: string, checked: boolean) => {
+    setToggles(prev => ({ ...prev, [label]: checked }));
+    toast.success(`${label} ${checked ? 'enabled' : 'disabled'} — saved locally`);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -39,7 +54,10 @@ export default function Settings() {
                 className="flex items-center justify-between"
               >
                 <span className="text-sm">{setting.label}</span>
-                <Switch checked={setting.enabled} />
+                <Switch
+                  checked={toggles[setting.key]}
+                  onCheckedChange={(checked) => handleToggle(setting.label, checked)}
+                />
               </motion.div>
             ))}
           </div>
