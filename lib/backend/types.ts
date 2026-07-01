@@ -10,7 +10,7 @@ export const TaskSchema = z.object({
 
 export const EventSchema = z.object({
   title: z.string().min(1).max(200),
-  date: z.string(),
+  date: z.string().optional(),   // ISO 8601 date; may be absent during clarification
   time: z.string().optional(),
   durationMinutes: z.number().int().positive().optional(),
 });
@@ -20,9 +20,15 @@ export const NoteSchema = z.object({
 });
 
 export const BrainDumpResponseSchema = z.object({
+  response: z.string(),
   tasks: z.array(TaskSchema),
   events: z.array(EventSchema),
   notes: z.array(NoteSchema),
+  // Clarification flow: when true, ask clarificationQuestion before saving
+  clarificationNeeded: z.boolean().optional(),
+  clarificationQuestion: z.string().optional(),
+  // Task deletion: IDs of existing tasks the user wants removed
+  deletedTaskIds: z.array(z.string()).optional(),
 });
 
 export const PlanItemSchema = z.object({

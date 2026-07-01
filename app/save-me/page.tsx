@@ -6,6 +6,7 @@ import { TopAppBar } from '@/components/ui/top-app-bar';
 import { GlassCard } from '@/components/ui/glass-card';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { BackgroundGradientAnimation } from '@/components/ui/background-gradient-animation';
+import { getTasks, saveTasks, getEvents } from '@/lib/storage';
 import { AlertTriangle, CheckCircle2, ArrowRightLeft, ShieldAlert, Sparkles, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -34,37 +35,64 @@ export default function SaveMe() {
     setIsLoading(true);
     setError(null);
     try {
+      const currentTasks = getTasks();
+      const currentEvents = getEvents();
+      
+      const taskCount = currentTasks.length;
+      const highPriorityCount = currentTasks.filter(t => t.priority === 1).length;
+      const meetingCount = currentEvents.length;
+      const meetingHours = currentEvents.reduce((acc, e) => {
+        const dur = parseFloat(e.duration) || 1.0;
+        return acc + dur;
+      }, 0);
+
       const res = await fetch('/api/ai/save-me', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           taskData: {
-            taskCount: 12,
-            highPriorityCount: 5,
-            meetingCount: 4,
-            meetingHours: 5,
-            estimatedHours: 8,
+            taskCount,
+            highPriorityCount,
+            meetingCount,
+            meetingHours,
+            estimatedHours: taskCount * 1.5,
             availableHours: 6,
           },
+          tasks: currentTasks,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       
+      // Update actual task priorities in LocalStorage!
+      if (data.priorityAdjustments && data.priorityAdjustments.length > 0) {
+        const updatedTasks = currentTasks.map(t => {
+          const adj = data.priorityAdjustments.find((a: any) => a.taskId === t.taskId);
+          if (adj) {
+            let newPriority = 2; // medium
+            if (adj.to === 'high') newPriority = 1;
+            if (adj.to === 'low') newPriority = 3;
+            return { ...t, priority: newPriority as any };
+          }
+          return t;
+        });
+        saveTasks(updatedTasks);
+      }
+
+      // Save emergency state flag
+      localStorage.setItem('aura_save_me_active', 'true');
+
       setResult({
         overloaded: data.overloaded ?? true,
         workloadScore: data.workloadScore ?? 89,
-        burnoutPrediction: 'Critical Burnout Risk (89%)',
+        burnoutPrediction: `Critical Burnout Risk (${data.workloadScore ?? 89}%)`,
         suggestedActions: data.suggestedActions ?? [
           'Postpone Q3 budget review meeting to tomorrow morning.',
           'De-prioritize design system updates; focus only on the client presentation.',
           'Delegate PRD proofreading to the Reflection agent.',
           'Initiate a 25-minute deep focus breathing block right now.'
         ],
-        priorityAdjustments: data.priorityAdjustments ?? [
-          { taskId: '1', from: 'High', to: 'Medium', reason: 'PRD Document review can be deferred by 24h without major issues.' },
-          { taskId: '2', from: 'High', to: 'Low', reason: 'Design system updates are non-critical for today\'s client meeting.' }
-        ]
+        priorityAdjustments: data.priorityAdjustments ?? []
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to analyze workload';
@@ -78,6 +106,7 @@ export default function SaveMe() {
   const handleReset = () => {
     setIsActive(false);
     setResult(null);
+    localStorage.removeItem('aura_save_me_active');
   };
 
   return (

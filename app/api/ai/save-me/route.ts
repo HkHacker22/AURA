@@ -8,16 +8,28 @@ registerAllAgents();
 
 export async function POST(req: NextRequest) {
   try {
-    const { userMessage, userId, taskData } = await req.json();
-    if (!userMessage && !taskData) {
-      return NextResponse.json({ error: 'userMessage or taskData required' }, { status: 400 });
+    const { userMessage, userId, taskData, tasks } = await req.json();
+
+    let payload = '';
+    if (tasks && tasks.length > 0) {
+      payload += `Here is my task list:\n`;
+      tasks.forEach((t: any) => {
+        const priorityLabel = t.priority === 1 || t.priority === 'high' ? 'high' : t.priority === 3 || t.priority === 'low' ? 'low' : 'medium';
+        payload += `- ID: ${t.taskId || t.id}, Content: "${t.content || t.title}", Current Priority: ${priorityLabel}\n`;
+      });
     }
 
-    const payload = taskData
-      ? `I have ${taskData.taskCount} tasks today, ${taskData.highPriorityCount} are high priority. ` +
+    if (taskData) {
+      payload += `\nI have ${taskData.taskCount} tasks, ${taskData.highPriorityCount} are high priority. ` +
         `I have ${taskData.meetingCount} meetings totaling ${taskData.meetingHours} hours. ` +
-        `Estimated work time: ${taskData.estimatedHours}h. Available: ${taskData.availableHours}h.`
-      : userMessage;
+        `Available time: ${taskData.availableHours}h.`;
+    } else if (userMessage) {
+      payload += `\nUser details: ${userMessage}`;
+    }
+
+    if (!payload) {
+      return NextResponse.json({ error: 'tasks, userMessage or taskData required' }, { status: 400 });
+    }
 
     const agent = agentRegistry.get('save-me');
     if (!agent) return NextResponse.json({ error: 'Save Me agent not found' }, { status: 500 });

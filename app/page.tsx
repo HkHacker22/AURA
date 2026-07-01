@@ -1,17 +1,26 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { GlassCard } from '@/components/ui/glass-card';
 import { AgentCard } from '@/components/ui/agent-card';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { BackgroundGradientAnimation } from '@/components/ui/background-gradient-animation';
+import { getTasks, getEvents, getAgents } from '@/lib/storage';
+import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, CheckCircle2, Clock, BarChart3, ChevronRight, Activity } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const today = new Date();
-  
+  const hour = today.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = (user as any)?.displayName?.split(' ')[0]
+    || (user as any)?.name?.split(' ')[0]
+    || 'there';
+
   // Format current date nicely
   const formattedDate = today.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -19,12 +28,27 @@ export default function Dashboard() {
     day: 'numeric'
   });
 
-  const scheduledTasks = [
-    { time: '9:00 AM', title: 'Team Standup', type: 'meeting', color: 'border-purple-500 text-purple-400' },
-    { time: '11:30 AM', title: 'Product Review', type: 'review', color: 'border-cyan-500 text-cyan-400' },
-    { time: '2:00 PM', title: 'Deep Work Session', type: 'focus', color: 'border-pink-500 text-pink-400' },
-    { time: '4:30 PM', title: 'Client Call', type: 'call', color: 'border-indigo-500 text-indigo-400' },
-  ];
+  const uid = (user as any)?.uid || (user as any)?.id || undefined;
+
+  const [taskList, setTaskList] = useState<any[]>([]);
+  const [eventList, setEventList] = useState<any[]>([]);
+  const [agentList, setAgentList] = useState<any[]>([]);
+
+  useEffect(() => {
+    setTaskList(getTasks(uid));
+    const todayISO = new Date().toISOString().split('T')[0];
+    const allEvents = getEvents(uid);
+    // Show only today's events in the dashboard schedule strip
+    const todayEvents = allEvents.filter((e: any) => e.date === todayISO);
+    setEventList(todayEvents.length > 0 ? todayEvents : allEvents.slice(0, 4));
+    setAgentList(getAgents());
+  }, [uid]);
+
+  const completedCount = taskList.filter(t => t.status === 'completed').length;
+  const totalCount = taskList.length;
+  const successPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const scheduledTasks = eventList.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-[#FBFAFC] pb-32 relative overflow-x-hidden">
@@ -61,7 +85,7 @@ export default function Dashboard() {
               <div>
                 <span className="text-xs font-semibold tracking-widest text-purple-400 uppercase">One Mind Ahead</span>
                 <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mt-1">
-                  Good morning, Alex 👋
+                  {greeting}, {firstName} 👋
                 </h2>
                 <p className="text-muted-foreground mt-2 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-purple-400" />
@@ -80,13 +104,10 @@ export default function Dashboard() {
                       fill="none"
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
-                    <motion.path
-                      initial={{ strokeDasharray: "0 100" }}
-                      animate={{ strokeDasharray: "89 100" }}
-                      transition={{ duration: 1, delay: 0.3 }}
+                    <path
                       className="text-purple-500"
-                      strokeWidth="3.2"
-                      strokeDasharray="89, 100"
+                      strokeWidth="3"
+                      strokeDasharray={`${successPercentage}, 100`}
                       strokeLinecap="round"
                       stroke="currentColor"
                       fill="none"
@@ -94,12 +115,12 @@ export default function Dashboard() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center font-bold text-base text-white">
-                    89%
+                    {successPercentage}%
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Today's Goal</div>
-                  <div className="text-lg font-bold text-white mt-0.5">89% Success</div>
+                  <div className="text-lg font-bold text-white mt-0.5">{successPercentage}% Success</div>
                 </div>
               </div>
             </GlassCard>
@@ -111,9 +132,9 @@ export default function Dashboard() {
               <Activity className="w-4 h-4 text-purple-400" />
               Your Agents
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {['Planner', 'Research', 'Reflection', 'Focus'].map((name) => (
-                <AgentCard key={name} agent={{ name, status: 'online' }} />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {agentList.map((agent) => (
+                <AgentCard key={agent.name} agent={agent} />
               ))}
             </div>
           </div>
@@ -132,32 +153,40 @@ export default function Dashboard() {
             </div>
 
             <GlassCard className="flex-1 space-y-5 p-6" hover={false}>
-              <div className="relative border-l border-white/10 pl-6 ml-2.5 space-y-6">
-                {scheduledTasks.map((task, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="relative"
-                  >
-                    {/* timeline bullet */}
-                    <span className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-[#0A0A0F] border border-white/20 flex items-center justify-center">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                    </span>
-                    
-                    <div className="flex items-start justify-between bg-white/[0.02] border border-white/5 rounded-xl p-3.5 hover:bg-white/[0.04] transition-all">
-                      <div>
-                        <span className="text-[11px] font-bold text-muted-foreground">{task.time}</span>
-                        <h4 className="text-sm font-semibold text-white mt-0.5">{task.title}</h4>
-                      </div>
-                      <span className={`text-[10px] px-2.5 py-0.5 rounded-full border bg-white/[0.02] capitalize font-medium shrink-0 ${task.color}`}>
-                        {task.type}
+              {scheduledTasks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground">
+                  <Calendar className="w-8 h-8 text-white/20 mb-3" />
+                  <p className="text-sm">No events scheduled for today</p>
+                  <Link href="/schedule" className="text-xs text-purple-400 mt-2 font-semibold hover:underline">Schedule an event</Link>
+                </div>
+              ) : (
+                <div className="relative border-l border-white/10 pl-6 ml-2.5 space-y-6">
+                  {scheduledTasks.map((task, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="relative"
+                    >
+                      {/* timeline bullet */}
+                      <span className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-[#0A0A0F] border border-white/20 flex items-center justify-center">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                       </span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                      
+                      <div className="flex items-start justify-between bg-white/[0.02] border border-white/5 rounded-xl p-3.5 hover:bg-white/[0.04] transition-all">
+                        <div>
+                          <span className="text-[11px] font-bold text-muted-foreground">{task.time}</span>
+                          <h4 className="text-sm font-semibold text-white mt-0.5">{task.title}</h4>
+                        </div>
+                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full border bg-white/[0.02] capitalize font-medium shrink-0 ${task.color}`}>
+                          {task.type}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </GlassCard>
           </div>
 

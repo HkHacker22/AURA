@@ -10,14 +10,28 @@ import { cn } from '@/lib/utils';
 import { Settings, Bell, Shield, CreditCard, LogOut, ChevronRight } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
   const router = useRouter();
+  const { user } = useAuth();
+
+  const displayName = (user as any)?.displayName || (user as any)?.name || 'Guest User';
+  const email = (user as any)?.email || 'No email';
+  const photoURL = (user as any)?.photoURL || null;
+
+  // Generate initials from display name
+  const initials = displayName
+    .split(' ')
+    .slice(0, 2)
+    .map((n: string) => n[0]?.toUpperCase() || '')
+    .join('');
 
   const handleSignOut = async () => {
     try {
+      localStorage.removeItem('aura_guest_user');
       await signOut(auth);
       toast.success('Logged out successfully');
       router.push('/auth');
@@ -63,19 +77,22 @@ export default function Profile() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Avatar & Header */}
-          <div className="lg:col-span-5 bg-white/[0.01] border border-white/5 rounded-[20px] overflow-hidden relative h-[280px] lg:h-[350px]">
+          <div className="lg:col-span-5 bg-white/[0.01] border border-white/5 rounded-[20px] overflow-hidden relative h-[280px] lg:h-[420px]">
             <BackgroundLines className="absolute inset-0 w-full h-full bg-transparent dark:bg-transparent flex flex-col items-center justify-center">
-              <div className="relative z-10 flex flex-col items-center text-center mt-6">
-                
-                {/* AJ Avatar with Neon Glowing Ring */}
+              <div className="relative z-10 flex flex-col items-center text-center px-6">
+
+                {/* Avatar with Neon Glowing Ring */}
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", duration: 0.5 }}
-                  className="relative w-22 h-22 rounded-full bg-[#111827] border-2 border-purple-500/30 flex items-center justify-center text-2xl font-bold text-white shadow-[0_0_24px_rgba(168,85,247,0.25)] animate-pulse"
+                  transition={{ type: 'spring', duration: 0.5 }}
+                  className="relative w-20 h-20 lg:w-32 lg:h-32 rounded-full bg-[#111827] border-2 border-purple-500/30 flex items-center justify-center text-2xl lg:text-4xl font-bold text-white shadow-[0_0_24px_rgba(168,85,247,0.25)] overflow-hidden shrink-0"
                 >
-                  AJ
-                  
+                  {photoURL ? (
+                    <img src={photoURL} alt={displayName} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
+                  ) : (
+                    <span>{initials || 'U'}</span>
+                  )}
                   {/* Outer pulsing ring */}
                   <motion.div
                     animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
@@ -84,8 +101,8 @@ export default function Profile() {
                   />
                 </motion.div>
 
-                <h2 className="text-xl font-bold mt-4 text-white">Alex Johnson</h2>
-                <p className="text-xs text-muted-foreground mt-1">alex@company.com</p>
+                <h2 className="text-xl lg:text-2xl font-bold mt-4 lg:mt-6 text-white">{displayName}</h2>
+                <p className="text-xs lg:text-sm text-muted-foreground mt-1 break-all px-2">{email}</p>
                 
               </div>
             </BackgroundLines>
@@ -93,7 +110,7 @@ export default function Profile() {
 
           {/* Right Column: Settings menu options */}
           <div className="lg:col-span-7 space-y-3">
-            <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-4 px-1">Settings & Preferences</h3>
+            <h3 className="text-[11px] font-bold uppercase text-muted-foreground tracking-wider mb-4 px-1">Settings &amp; Preferences</h3>
             
             {menuItems.map((item, i) => (
               <motion.button

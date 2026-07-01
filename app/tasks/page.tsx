@@ -1,22 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TopAppBar } from '@/components/ui/top-app-bar';
 import { GlassCard } from '@/components/ui/glass-card';
 import { BottomTabs } from '@/components/ui/bottom-tabs';
 import { BackgroundGradientAnimation } from '@/components/ui/background-gradient-animation';
+import { getTasks, saveTasks } from '@/lib/storage';
 import { CheckSquare, Trash2, X, Plus, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
-interface Task {
-  id: string;
-  title: string;
-  dueDate: string;
-  priority: 'high' | 'medium' | 'low';
-  completed: boolean;
-}
+import { Task } from '@/types';
 
 export default function Tasks() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'today' | 'upcoming' | 'completed'>('all');
@@ -27,27 +22,29 @@ export default function Tasks() {
   const [dueDate, setDueDate] = useState('Today');
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
 
-  const [taskList, setTaskList] = useState<Task[]>([
-    { id: '1', title: 'Review PRD Document', dueDate: 'Today', priority: 'high', completed: false },
-    { id: '2', title: 'Design System Updates', dueDate: 'Today', priority: 'medium', completed: false },
-    { id: '3', title: 'User Research Session', dueDate: 'Tomorrow', priority: 'medium', completed: false },
-    { id: '4', title: 'Prepare Pitch Deck', dueDate: 'Jul 3', priority: 'high', completed: false },
-  ]);
+  const [taskList, setTaskList] = useState<Task[]>([]);
+
+  useEffect(() => {
+    setTaskList(getTasks());
+  }, []);
 
   const toggleComplete = (id: string) => {
-    setTaskList(prev =>
-      prev.map(task =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
+    const updated = taskList.map(task =>
+      task.taskId === id ? { ...task, status: (task.status === 'completed' ? 'pending' : 'completed') as any } : task
     );
-    const task = taskList.find(t => t.id === id);
-    if (task && !task.completed) {
-      toast.success(`Completed: ${task.title}`);
+    setTaskList(updated);
+    saveTasks(updated);
+
+    const task = taskList.find(t => t.taskId === id);
+    if (task && task.status !== 'completed') {
+      toast.success(`Completed: ${task.content}`);
     }
   };
 
   const deleteTask = (id: string) => {
-    setTaskList(prev => prev.filter(task => task.id !== id));
+    const updated = taskList.filter(task => task.taskId !== id);
+    setTaskList(updated);
+    saveTasks(updated);
     toast.success('Task deleted');
   };
 
@@ -58,25 +55,37 @@ export default function Tasks() {
       return;
     }
 
+    let priorityNum: 1 | 2 | 3 = 2;
+    if (priority === 'high') priorityNum = 1;
+    if (priority === 'low') priorityNum = 3;
+
     const newTask: Task = {
-      id: Date.now().toString(),
-      title,
-      dueDate,
-      priority,
-      completed: false,
+      taskId: Date.now().toString(),
+      content: title,
+      type: 'coding' as any,
+      priority: priorityNum as any,
+      status: 'pending' as any,
+      estimatedMinutes: 60,
+      failureProbability: 0.1,
+      energyRequired: 'medium' as any,
+      location: 'any' as any,
+      source: 'manual' as any,
+      createdAt: new Date(),
+      scheduledSlots: [],
     };
 
-    setTaskList(prev => [newTask, ...prev]);
+    const updated = [newTask, ...taskList];
+    setTaskList(updated);
+    saveTasks(updated);
     setTitle('');
     setShowAddTask(false);
     toast.success('Task created successfully');
   };
 
   const filteredTasks = taskList.filter(task => {
-    if (activeFilter === 'completed') return task.completed;
-    if (task.completed) return false;
-    if (activeFilter === 'today') return task.dueDate.toLowerCase() === 'today';
-    if (activeFilter === 'upcoming') return task.dueDate.toLowerCase() !== 'today';
+    const isCompleted = task.status === 'completed';
+    if (activeFilter === 'completed') return isCompleted;
+    if (isCompleted) return false;
     return true;
   });
 
@@ -155,62 +164,66 @@ export default function Tasks() {
                     <p className="text-sm text-muted-foreground">No tasks in this category</p>
                   </motion.div>
                 ) : (
-                  filteredTasks.map((task) => (
-                    <motion.div
-                      key={task.id}
-                      layout
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <GlassCard className="p-4.5 rounded-[20px] flex items-center justify-between" hover={false}>
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          
-                          <button 
-                            onClick={() => toggleComplete(task.id)}
-                            className="shrink-0 text-muted-foreground hover:text-purple-400 active:scale-95 transition-all"
-                          >
-                            {task.completed ? (
-                              <div className="w-5 h-5 rounded bg-purple-600 border border-purple-500 flex items-center justify-center text-white">
-                                <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                              </div>
-                            ) : (
-                              <div className="w-5 h-5 rounded border border-white/20 hover:border-purple-500 transition-colors" />
-                            )}
-                          </button>
-                          
-                          <div className="min-w-0">
-                            <span className={cn(
-                              "text-sm font-semibold block truncate leading-normal transition-all",
-                              task.completed ? "line-through text-muted-foreground" : "text-white"
-                            )}>
-                              {task.title}
-                            </span>
+                  filteredTasks.map((task) => {
+                    const isCompleted = task.status === 'completed';
+                    const priorityLabel = task.priority === 1 ? 'high' : task.priority === 3 ? 'low' : 'medium';
+                    return (
+                      <motion.div
+                        key={task.taskId}
+                        layout
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <GlassCard className="p-4.5 rounded-[20px] flex items-center justify-between" hover={false}>
+                          <div className="flex items-center gap-3.5 min-w-0">
                             
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-muted-foreground font-medium">{task.dueDate}</span>
-                              <span className="text-[8px] text-muted-foreground">•</span>
+                            <button 
+                              onClick={() => toggleComplete(task.taskId)}
+                              className="shrink-0 text-muted-foreground hover:text-purple-400 active:scale-95 transition-all"
+                            >
+                              {isCompleted ? (
+                                <div className="w-5 h-5 rounded bg-purple-600 border border-purple-500 flex items-center justify-center text-white">
+                                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 rounded border border-white/20 hover:border-purple-500 transition-colors" />
+                              )}
+                            </button>
+                            
+                            <div className="min-w-0">
                               <span className={cn(
-                                "text-[10px] font-semibold capitalize",
-                                task.priority === 'high' ? 'text-danger' :
-                                task.priority === 'medium' ? 'text-warning' : 'text-purple-400'
+                                "text-sm font-semibold block truncate leading-normal transition-all",
+                                isCompleted ? "line-through text-muted-foreground" : "text-white"
                               )}>
-                                {task.priority} Priority
+                                {task.content}
                               </span>
+                              
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] text-muted-foreground font-medium">Today</span>
+                                <span className="text-[8px] text-muted-foreground">•</span>
+                                <span className={cn(
+                                  "text-[10px] font-semibold capitalize",
+                                  priorityLabel === 'high' ? 'text-danger' :
+                                  priorityLabel === 'medium' ? 'text-warning' : 'text-purple-400'
+                                )}>
+                                  {priorityLabel} Priority
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <button 
-                          onClick={() => deleteTask(task.id)}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-danger hover:bg-white/5 active:scale-90 transition-all shrink-0"
-                        >
-                          <Trash2 className="w-4.5 h-4.5" />
-                        </button>
-                      </GlassCard>
-                    </motion.div>
-                  ))
+                          <button 
+                            onClick={() => deleteTask(task.taskId)}
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-danger hover:bg-white/5 active:scale-90 transition-all shrink-0"
+                          >
+                            <Trash2 className="w-4.5 h-4.5" />
+                          </button>
+                        </GlassCard>
+                      </motion.div>
+                    );
+                  })
                 )}
               </AnimatePresence>
             </div>

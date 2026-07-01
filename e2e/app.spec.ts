@@ -13,7 +13,9 @@ test.describe('AURA Application', () => {
     await page.waitForTimeout(1000);
 
     expect(errors.length).toBe(0);
-    await expect(page.getByRole('heading', { name: 'Good morning' })).toBeVisible();
+    // Greeting is time-of-day dynamic: morning / afternoon / evening
+    const greetingHeading = page.locator('h2').filter({ hasText: /Good (morning|afternoon|evening)/ });
+    await expect(greetingHeading).toBeVisible();
     await expect(page.getByText('Your Agents')).toBeVisible();
   });
 
